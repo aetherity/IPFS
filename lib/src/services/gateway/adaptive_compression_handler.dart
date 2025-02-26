@@ -7,7 +7,7 @@ import 'package:dart_ipfs/src/core/data_structures/blockstore.dart';
 import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'dart:io';
-import 'package:lz4/lz4.dart';
+import 'package:es_compression/lz4.dart';
 
 class CompressionConfig {
   final bool enabled;

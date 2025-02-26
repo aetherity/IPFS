@@ -6,7 +6,7 @@ import 'package:dart_ipfs/src/core/data_structures/blockstore.dart';
 import 'adaptive_compression_handler.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:lz4/lz4.dart';
+import 'package:es_compression/lz4.dart';
 
 /// Manages compressed cache storage with multiple compression algorithms
 class CompressedCacheStore {

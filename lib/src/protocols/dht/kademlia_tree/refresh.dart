@@ -12,8 +12,7 @@ extension Refresh on KademliaTree {
         // Check if the peer has been seen recently
         DateTime? lastSeenTime =
             lastSeen[nodeEntry.key]; // Use the public getter instead
-        if (lastSeenTime != null &&
-            DateTime.now().difference(lastSeenTime) > refreshTimeout) {
+        if (DateTime.now().difference(lastSeenTime!) > refreshTimeout) {
           // 2. Evict stale peers
           removePeer(nodeEntry.key);
           lastSeen.remove(nodeEntry.key); // Use the public getter

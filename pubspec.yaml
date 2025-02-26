@@ -51,7 +51,8 @@ dependencies:
 
   cbor: ^6.3.3  # Or the latest version
 
-  lz4: ^0.0.1  # Use the latest stable version
+  #lz4: ^0.0.1  # Use the latest stable version
+  es_compression: ^2.0.13
 
   shelf_router: ^1.1.4
 
