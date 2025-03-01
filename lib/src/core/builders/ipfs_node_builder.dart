@@ -64,6 +64,7 @@ class IPFSNodeBuilder {
 
     _container.registerSingleton(MDNSHandler(_config));
 
+  // Crashes in this code because references IPFSNode which does not exist until 
     _container.registerSingleton(
         DHTHandler(_config, networkHandler.p2pRouter, networkHandler));
 

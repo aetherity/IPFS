@@ -21,7 +21,7 @@ import 'package:dart_ipfs/src/proto/generated/dht/ipfs_node_network_events.pb.da
 /// Implementation of the Kademlia DHT protocol for IPFS
 /// Following specs from: https://github.com/libp2p/specs/tree/master/kad-dht
 class DHTClient {
-  final IPFSNode node;
+  late final IPFSNode node;
   final NetworkHandler networkHandler;
   final P2plibRouter _router;
   late final LibP2PPeerId peerId;
