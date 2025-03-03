@@ -9,6 +9,7 @@ import 'package:dart_ipfs/src/proto/generated/ipld/data_model.pb.dart';
 import 'package:dart_ipfs/src/utils/private_key.dart';
 import 'package:pointycastle/pointycastle.dart';
 import 'package:convert/convert.dart';
+import 'package:cryptography/cryptography.dart' as crypto;
 
 class JoseCoseHandler {
   static Future<Uint8List> encodeJWS(
@@ -75,15 +76,17 @@ class JoseCoseHandler {
     }
 
     final payload = _extractPayload(node);
+    final signerVerifier = _SignerVerifier(privateKey.algorithm as crypto.SignatureAlgorithm<crypto.PublicKey>, privateKey as crypto.SimpleKeyPair);
 
     // Create COSE Sign1 message using CatalystCose
-    final coseValue = await CatalystCose.sign1(
-      privateKey: _privateKeyToBytes(privateKey),
+    final coseValue = await CoseSign1.sign(
+      protectedHeaders: const CoseHeaders.protected(),
+      unprotectedHeaders: const CoseHeaders.unprotected(),
+      signer: signerVerifier,
       payload: payload,
-      kid: CborString('ipfs-key'),
     );
 
-    return Uint8List.fromList(cbor.encode(coseValue));
+    return Uint8List.fromList(cbor.encode(coseValue.toCbor()));
   }
 
   static Future<Uint8List> decodeJWS(
@@ -147,10 +150,11 @@ class JoseCoseHandler {
 
     final coseData = _extractPayload(node);
     final coseValue = cbor.decode(coseData);
+    final coseSign1 = CoseSign1.fromCbor(cbor.decode(coseData));
+    final signerVerifier = _SignerVerifier(privateKey.algorithm as crypto.SignatureAlgorithm<crypto.PublicKey>, privateKey as crypto.SimpleKeyPair);
 
-    final isValid = await CatalystCose.verifyCoseSign1(
-      coseSign1: coseValue,
-      publicKey: _publicKeyToBytes(privateKey.publicKey),
+    final isValid = await coseSign1.verify(
+      verifier: signerVerifier,
     );
 
     if (!isValid) {
@@ -189,5 +193,40 @@ class JoseCoseHandler {
     final y =
         publicKey.Q!.y!.toBigInteger()!.toRadixString(16).padLeft(64, '0');
     return hex.decode(x + y);
+  }
+}
+
+final class _SignerVerifier
+    implements CatalystCoseSigner, CatalystCoseVerifier {
+  final crypto.SignatureAlgorithm _algorithm;
+  final crypto.SimpleKeyPair _keyPair;
+
+  const _SignerVerifier(this._algorithm, this._keyPair);
+
+  @override
+  StringOrInt? get alg => const IntValue(CoseValues.eddsaAlg);
+
+  @override
+  Future<Uint8List?> get kid async {
+    final pk = await _keyPair.extractPublicKey();
+    return Uint8List.fromList(pk.bytes);
+  }
+
+  @override
+  Future<Uint8List> sign(Uint8List data) async {
+    final signature = await _algorithm.sign(data, keyPair: _keyPair);
+    return Uint8List.fromList(signature.bytes);
+  }
+
+  @override
+  Future<bool> verify(Uint8List data, Uint8List signature) async {
+    final publicKey = await _keyPair.extractPublicKey();
+    return _algorithm.verify(
+      data,
+      signature: crypto.Signature(
+        signature,
+        publicKey: crypto.SimplePublicKey(publicKey.bytes, type: crypto.KeyPairType.ed25519),
+      ),
+    );
   }
 }

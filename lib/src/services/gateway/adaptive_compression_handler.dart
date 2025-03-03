@@ -12,27 +12,27 @@ import 'package:es_compression/lz4.dart';
 class CompressionConfig {
   final bool enabled;
   final int maxUncompressedSize;
-  final Map<String, CompressionType> contentTypeRules;
+  final Map<String, CompType> contentTypeRules;
 
   CompressionConfig({
     this.enabled = true,
     this.maxUncompressedSize = 52428800, // 50MB
-    Map<String, CompressionType>? contentTypeRules,
+    Map<String, CompType>? contentTypeRules,
   }) : contentTypeRules = contentTypeRules ?? _defaultCompressionRules;
 
   static final _defaultCompressionRules = {
-    'text/': CompressionType.gzip,
-    'application/json': CompressionType.gzip,
-    'application/javascript': CompressionType.gzip,
-    'image/': CompressionType.none,
-    'video/': CompressionType.none,
-    'audio/': CompressionType.none,
+    'text/': CompType.gzip,
+    'application/json': CompType.gzip,
+    'application/javascript': CompType.gzip,
+    'image/': CompType.none,
+    'video/': CompType.none,
+    'audio/': CompType.none,
   };
 }
 
 class CompressionAnalysis {
-  final Map<CompressionType, double> compressionRatios;
-  final CompressionType recommendedType;
+  final Map<CompType, double> compressionRatios;
+  final CompType recommendedType;
 
   CompressionAnalysis({
     required this.compressionRatios,
@@ -54,7 +54,7 @@ class AdaptiveCompressionHandler {
     }
 
     final compressionType = getOptimalCompression(contentType, block.size);
-    if (compressionType == CompressionType.none) {
+    if (compressionType == CompType.none) {
       return block;
     }
 
@@ -80,24 +80,24 @@ class AdaptiveCompressionHandler {
     return compressedBlock;
   }
 
-  CompressionType getOptimalCompression(String contentType, int size) {
+  CompType getOptimalCompression(String contentType, int size) {
     for (final entry in _config.contentTypeRules.entries) {
       if (contentType.startsWith(entry.key)) {
         return entry.value;
       }
     }
-    return CompressionType.lz4; // Default to fast compression
+    return CompType.lz4; // Default to fast compression
   }
 
-  Future<Uint8List> _compressData(Uint8List data, CompressionType type) async {
+  Future<Uint8List> _compressData(Uint8List data, CompType type) async {
     switch (type) {
-      case CompressionType.none:
+      case CompType.none:
         return data;
-      case CompressionType.gzip:
+      case CompType.gzip:
         return Uint8List.fromList(GZipEncoder().encode(data)!);
-      case CompressionType.zlib:
+      case CompType.zlib:
         return Uint8List.fromList(ZLibEncoder().encode(data));
-      case CompressionType.lz4:
+      case CompType.lz4:
         return Uint8List.fromList(Lz4Encoder().convert(data));
     }
   }
@@ -112,16 +112,16 @@ class AdaptiveCompressionHandler {
   CompressionAnalysis analyzeCompression(
     Uint8List data,
     String contentType,
-    Map<CompressionType, int> compressedSizes,
+    Map<CompType, int> compressedSizes,
   ) {
-    final ratios = <CompressionType, double>{};
+    final ratios = <CompType, double>{};
 
     for (final entry in compressedSizes.entries) {
       ratios[entry.key] = entry.value / data.length;
     }
 
     // Find the compression type with the best ratio
-    var bestType = CompressionType.none;
+    var bestType = CompType.none;
     var bestRatio = 1.0;
 
     for (final entry in ratios.entries) {

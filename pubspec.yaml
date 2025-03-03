@@ -11,62 +11,37 @@ environment:
   sdk: '>=3.5.4 <4.0.0'
 
 dependencies:
-  catalyst_cose: ^0.3.0
-
+  catalyst_cose: ^1.0.0
   collection: ^1.19.0
+  fixnum: ^1.1.1
+  convert: ^3.1.2
+  uuid: ^4.5.1
+  intl: any  # Use the latest stable version
+  logging: ^1.0.2 # For logging events and debugging
+  yaml: ^3.1.3
+
+  archive: ^4.0.4
+  es_compression: ^2.0.13
   
   http: ^1.2.2
-
-  fixnum: ^1.1.1
-
-  convert: ^3.1.2
-
-  uuid: ^4.5.1
-
-  # Networking and P2P
-  p2plib: ^2.2.2 # Or a suitable libp2p implementation for Dart
-
-  # Cryptography
-  crypto: ^3.0.3 # For CID calculation and other cryptographic operations
-
-  # Serialization
+  hive: ^2.2.3 # Local database for persistent storage
   protobuf: ^3.1.0 # Efficient serialization format for messages
 
-  # Data Storage
-  hive: ^2.2.3 # Local database for persistent storage
-
-  # Logging
-  logging: ^1.0.2 # For logging events and debugging
-
-  # Metrics (Optional)
-  prometheus_client: ^1.0.0+1 # Metrics library for monitoring
-
+  p2plib: ^2.2.2 # Networking and P2P
+  crypto: ^3.0.3 # For CID calculation and other cryptographic operations
   dart_merkle_lib: ^1.0.1
-
   multibase: ^1.0.0
-
   dart_multihash: ^1.0.1
-  archive: ^3.6.1
   murmurhash: ^1.0.1
-
   cbor: ^6.3.3  # Or the latest version
-
-  #lz4: ^0.0.1  # Use the latest stable version
-  es_compression: ^2.0.13
-
   shelf_router: ^1.1.4
-
-  intl: ^0.19.0  # Use the latest stable version
-
   markdown: ^7.2.2
   synchronized: ^3.3.0+3
   multicast_dns: ^0.3.2+7
-
   pointycastle: ^3.7.3
-
   jose: ^0.3.4
 
-  yaml: ^3.1.3
+  prometheus_client: ^1.0.0+1 # Metrics library for monitoring
 
 dev_dependencies:
   test: ^1.21.0 # For unit and integration tests

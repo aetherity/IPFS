@@ -39,7 +39,7 @@ class CompressedCacheStore {
       final compressedData = await cacheFile.readAsBytes();
       final metadata = await _readMetadata(cacheFile.path);
       final compressionType =
-          _parseCompressionType(metadata['compression'] ?? 'gzip');
+          _parseCompType(metadata['compression'] ?? 'gzip');
 
       return _decompress(compressedData, compressionType);
     } catch (e) {
@@ -58,7 +58,7 @@ class CompressedCacheStore {
       data.length,
     );
 
-    if (compressionType == CompressionType.none) {
+    if (compressionType == CompType.none) {
       await _storeUncompressed(cid, contentType, data);
       return;
     }
@@ -80,28 +80,28 @@ class CompressedCacheStore {
     });
   }
 
-  Uint8List _compress(Uint8List data, CompressionType type) {
+  Uint8List _compress(Uint8List data, CompType type) {
     switch (type) {
-      case CompressionType.none:
+      case CompType.none:
         return data;
-      case CompressionType.gzip:
+      case CompType.gzip:
         return Uint8List.fromList(GZipEncoder().encode(data)!);
-      case CompressionType.zlib:
+      case CompType.zlib:
         return Uint8List.fromList(ZLibEncoder().encode(data));
-      case CompressionType.lz4:
+      case CompType.lz4:
         return Uint8List.fromList(Lz4Encoder().convert(data));
     }
   }
 
-  Uint8List _decompress(Uint8List data, CompressionType type) {
+  Uint8List _decompress(Uint8List data, CompType type) {
     switch (type) {
-      case CompressionType.none:
+      case CompType.none:
         return data;
-      case CompressionType.gzip:
+      case CompType.gzip:
         return Uint8List.fromList(GZipDecoder().decodeBytes(data));
-      case CompressionType.zlib:
+      case CompType.zlib:
         return Uint8List.fromList(ZLibDecoder().decodeBytes(data));
-      case CompressionType.lz4:
+      case CompType.lz4:
         return Uint8List.fromList(Lz4Decoder().convert(data));
     }
   }
@@ -173,17 +173,17 @@ class CompressedCacheStore {
     await metadataFile.writeAsString(json.encode(metadata));
   }
 
-  CompressionType _parseCompressionType(String name) {
-    return CompressionType.values.firstWhere(
+  CompType _parseCompType(String name) {
+    return CompType.values.firstWhere(
       (type) => type.name == name,
-      orElse: () => CompressionType.gzip,
+      orElse: () => CompType.gzip,
     );
   }
 
   Future<void> _storeUncompressed(
       CID cid, String contentType, Uint8List data) async {
     await _storeWithMetadata(cid, contentType, data, {
-      'compression': CompressionType.none.name,
+      'compression': CompType.none.name,
       'originalSize': data.length.toString(),
       'compressedSize': data.length.toString(),
       'compressionRatio': '1.0',
@@ -192,7 +192,7 @@ class CompressedCacheStore {
   }
 }
 
-enum CompressionType {
+enum CompType {
   none,
   gzip,
   zlib,
