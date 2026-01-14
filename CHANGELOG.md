@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.8.10] - 2026-01-14
+
+- **Maintenance**: Removed internal `.agent` tooling and updated `.gitignore` to prevent publishing of development artifacts.
+- **Maintenance**: Improved release workflow reliability and documentation.
+
+## [1.8.9] - 2026-01-14
+
+- Fixed `LateInitializationError` in `DHTClient` by adding initialization checks to public methods (Issue #22).
+- Confirmed resolution of AutoNAT dialback packet drops (Issue #19).
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
