@@ -100,7 +100,7 @@ class Logger {
     try {
       // Use platform abstraction for file writing
       _platform!.writeBytes(
-        'ipfs.log',
+        [ 'ipfs.log' ],
         // Append mode not directly supported, so we read + write
         // For simplicity, just log to console on web
         _stringToBytes('$message\n'),

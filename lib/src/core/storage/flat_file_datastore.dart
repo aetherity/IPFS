@@ -9,7 +9,7 @@ class FlatFileDatastore implements Datastore {
   /// Creates a datastore backed by files in [path].
   FlatFileDatastore(this.path);
 
-  /// The root directory for stored data files.
+  /// The root directory for stored data files. (will be under ApplicationDocuments+ipfs)
   final String path;
 
   // Cache platform instance
@@ -17,44 +17,30 @@ class FlatFileDatastore implements Datastore {
 
   @override
   Future<void> init() async {
-    if (!await _platform.exists(path)) {
-      await _platform.createDirectory(path);
+    if (!await _platform.exists([ path ])) {
+      await _platform.createDirectory([ path ]);
     }
-  }
-
-  String _getKeyPath(Key key) {
-    // Convert Key to path. Key starts with /, remove it.
-    var keyStr = key.toString();
-    if (keyStr.startsWith('/')) {
-      keyStr = keyStr.substring(1);
-    }
-    // Cross-platform path join
-    return p.join(path, '$keyStr.data');
   }
 
   @override
   Future<void> put(Key key, Uint8List value) async {
-    final filePath = _getKeyPath(key);
-    await _platform.writeBytes(filePath, value);
+    await _platform.writeBytes([ path, '${key.toString()}.data' ], value);
   }
 
   @override
   Future<Uint8List?> get(Key key) async {
-    final filePath = _getKeyPath(key);
-    return await _platform.readBytes(filePath);
+    return await _platform.readBytes([ path, '${key.toString()}.data' ]);
   }
 
   @override
   Future<bool> has(Key key) async {
-    final filePath = _getKeyPath(key);
-    return await _platform.exists(filePath);
+    return await _platform.exists([ path, '${key.toString()}.data' ]);
   }
 
   @override
   Future<void> delete(Key key) async {
-    final filePath = _getKeyPath(key);
-    if (await _platform.exists(filePath)) {
-      await _platform.delete(filePath);
+    if (await _platform.exists([ path, '${key.toString()}.data' ])) {
+      await _platform.delete([ path, '${key.toString()}.data' ]);
     }
   }
 
@@ -76,7 +62,7 @@ class FlatFileDatastore implements Datastore {
 
     while (stack.isNotEmpty) {
       final current = stack.removeLast();
-      final children = await _platform.listDirectory(current);
+      final children = await _platform.listDirectory([ current ]);
 
       for (final childPath in children) {
         // Is it a file or dir? Platform interface listDirectory returns strings.
@@ -97,7 +83,7 @@ class FlatFileDatastore implements Datastore {
           if (match) {
             Uint8List? value;
             if (!q.keysOnly || (q.filters != null && q.filters!.isNotEmpty)) {
-              value = await _platform.readBytes(childPath);
+              value = await _platform.readBytes([ childPath ]);
             }
 
             if (value != null && q.filters != null) {

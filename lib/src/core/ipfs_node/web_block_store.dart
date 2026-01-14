@@ -24,7 +24,7 @@ class WebBlockStore implements IBlockStore {
   @override
   Future<GetBlockResponse> getBlock(String cid) async {
     try {
-      final data = await _platform.readBytes('blocks/$cid');
+      final data = await _platform.readBytes([ 'blocks', cid ]);
       if (data == null) {
         return BlockResponseFactory.notFound();
       }
@@ -41,7 +41,7 @@ class WebBlockStore implements IBlockStore {
   Future<AddBlockResponse> putBlock(Block block) async {
     try {
       final cidStr = block.cid.encode();
-      await _platform.writeBytes('blocks/$cidStr', block.data);
+      await _platform.writeBytes([ 'blocks', cidStr ], block.data);
       return BlockResponseFactory.successAdd('Block added');
     } catch (e) {
       return BlockResponseFactory.failureAdd(e.toString());
@@ -51,7 +51,7 @@ class WebBlockStore implements IBlockStore {
   @override
   Future<RemoveBlockResponse> removeBlock(String cid) async {
     try {
-      await _platform.delete('blocks/$cid');
+      await _platform.delete([ 'blocks', cid ]);
       return BlockResponseFactory.successRemove('Block removed');
     } catch (e) {
       return BlockResponseFactory.failureRemove(e.toString());
@@ -63,14 +63,14 @@ class WebBlockStore implements IBlockStore {
     // Inefficient check (reads whole block), but generic platform verification
     // requires a generic 'exists' method which isn't guaranteed on all implementations of readBytes
     // unless we trust readBytes(path) == null means missing.
-    final data = await _platform.readBytes('blocks/$cid');
+    final data = await _platform.readBytes([ 'blocks', cid ]);
     return data != null;
   }
 
   @override
   Future<List<Block>> getAllBlocks() async {
     try {
-      final keys = await _platform.listDirectory('blocks');
+      final keys = await _platform.listDirectory([ 'blocks' ]);
       final blocks = <Block>[];
       for (final key in keys) {
         // Platform returns relative path 'blocks/cid' or just 'cid'?
@@ -84,7 +84,7 @@ class WebBlockStore implements IBlockStore {
         // Skip non-CID files if any
         if (cidStr.isEmpty) continue;
 
-        final data = await _platform.readBytes(key);
+        final data = await _platform.readBytes([ key ]);
         if (data != null) {
           try {
             blocks.add(Block(cid: CID.decode(cidStr), data: data));

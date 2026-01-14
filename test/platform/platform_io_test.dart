@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:dart_ipfs/src/platform/platform_io.dart';
+import 'package:dart_ipfs/src/utils/join_path.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -22,15 +23,10 @@ void main() {
       expect(platform.isIO, isTrue);
     });
 
-    test('pathSeparator', () {
-      expect(platform.pathSeparator, equals(Platform.pathSeparator));
-    });
-
     test('writeBytes and readBytes', () async {
-      final filePath = '${tempDir.path}/test.bin';
       final data = Uint8List.fromList([1, 2, 3, 4]);
-
-      await platform.writeBytes(filePath, data);
+      await platform.writeBytes([ tempDir.path, 'test.bin' ], data);
+      final filePath = await joinPath([ tempDir.path, 'test.bin' ]);
       expect(await File(filePath).exists(), isTrue);
 
       final read = await platform.readBytes(filePath);

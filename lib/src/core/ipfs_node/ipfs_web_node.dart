@@ -213,17 +213,17 @@ class IPFSWebNode {
 
   /// Pins a CID (marks it as persistent).
   Future<void> pin(CID cid) async {
-    await _platform.writeBytes('pins/${cid.encode()}', Uint8List(0));
+    await _platform.writeBytes([ 'pins', cid.encode() ], Uint8List(0));
   }
 
   /// Unpins a CID.
   Future<void> unpin(CID cid) async {
-    await _platform.delete('pins/${cid.encode()}');
+    await _platform.delete([ 'pins', cid.encode() ]);
   }
 
   /// Lists all pinned CIDs.
   Future<List<String>> listPins() async {
-    return _platform.listDirectory('pins');
+    return _platform.listDirectory([ 'pins' ]);
   }
 
   /// Publishes an IPNS record.

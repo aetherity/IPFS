@@ -10,32 +10,29 @@ abstract class IpfsPlatform {
 
   // --- File System Operations ---
 
-  /// Writes bytes to a file at [path].
-  Future<void> writeBytes(String path, Uint8List bytes);
+  /// Writes bytes to a file at DocumentsDirectory/ipfs/[fileNames].
+  Future<void> writeBytes(List<String> fileNames, Uint8List bytes);
 
-  /// Reads bytes from a file at [path].
-  Future<Uint8List?> readBytes(String path);
+  /// Reads bytes from a file at DocumentsDirectory/ipfs/[fileNames].
+  Future<Uint8List?> readBytes(List<String> fileNames);
 
-  /// Checks if a file or directory exists at [path].
-  Future<bool> exists(String path);
+  /// Checks if a file or directory exists at DocumentsDirectory/ipfs/[fileNames].
+  Future<bool> exists(List<String> fileNames);
 
-  /// Deletes a file or directory at [path].
-  Future<void> delete(String path);
+  /// Deletes a file or directory at DocumentsDirectory/ipfs/[fileNames].
+  Future<void> delete(List<String> fileNames);
 
-  /// Creates a directory at [path].
-  Future<void> createDirectory(String path);
+  /// Creates a directory at DocumentsDirectory/ipfs/[fileNames].
+  Future<void> createDirectory(List<String> fileNames);
 
-  /// Lists files in a directory at [path].
+  /// Lists files in a directory at DocumentsDirectory/ipfs/[fileNames].
   /// Returns a list of filenames/paths.
-  Future<List<String>> listDirectory(String path);
+  Future<List<String>> listDirectory(List<String> fileNames);
 
   // --- Network Operations ---
 
   // Note: HttpServer and Sockets are complex to abstract fully here.
   // Instead, we might expose methods to start services if supported.
-
-  /// Helper to get the path separator for the platform.
-  String get pathSeparator;
 }
 
 /// Returns the platform implementation (stub throws).
