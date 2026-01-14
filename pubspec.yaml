@@ -67,14 +67,14 @@ dependencies:
   dart_lz4: ^1.0.0
   port_forwarder: ^1.0.0
 
-  dart_console: ^4.1.2
-  file_picker: ^10.3.8
-  flutter_animate: ^4.5.2
-  glassmorphism: ^3.0.0
-  google_fonts: ^7.0.2
-  lucide_icons: ^0.257.0
+  #dart_console: ^4.1.2
+  #file_picker: ^10.3.8
+  #flutter_animate: ^4.5.2
+  #glassmorphism: ^3.0.0
+  #google_fonts: ^7.0.2
+  #lucide_icons: ^0.257.0
   path_provider: ^2.1.5
-  provider: ^6.1.5+1
+  #provider: ^6.1.5+1
 
 dev_dependencies:
   test: ^1.28.0 # For unit and integration tests
