@@ -60,8 +60,8 @@ class IpfsPlatformIO implements IpfsPlatform {
     final entities = await dir.list().toList();
     return entities.map((e) => e.path).toList();
   }
+}
 
   /// Returns the IO platform implementation.
   IpfsPlatform getPlatform() => IpfsPlatformIO();
 
-}
