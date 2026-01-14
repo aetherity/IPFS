@@ -8,6 +8,9 @@ abstract class IpfsPlatform {
   /// Whether the current platform is Desktop/Mobile (supports dart:io).
   bool get isIO;
 
+  /// Helper to get the path separator for the platform.
+  String get pathSeparator;
+
   // --- File System Operations ---
 
   /// Writes bytes to a file at DocumentsDirectory/ipfs/[fileNames].

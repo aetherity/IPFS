@@ -13,6 +13,9 @@ class IpfsPlatformIO implements IpfsPlatform {
   bool get isIO => true;
 
   @override
+  String get pathSeparator => Platform.pathSeparator;
+
+  @override
   Future<void> writeBytes(List<String> fileNames, Uint8List bytes) async {
     String path = await joinPath(fileNames);
     final file = File(path);
@@ -62,6 +65,6 @@ class IpfsPlatformIO implements IpfsPlatform {
   }
 }
 
-  /// Returns the IO platform implementation.
-  IpfsPlatform getPlatform() => IpfsPlatformIO();
+/// Returns the IO platform implementation.
+IpfsPlatform getPlatform() => IpfsPlatformIO();
 

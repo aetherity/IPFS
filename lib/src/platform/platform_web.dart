@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:idb_shim/idb_browser.dart';
 
-import '../utils/join_path.dart';
 import 'platform_stub.dart';
 
 /// Web implementation of the IPFS platform interface.
@@ -59,8 +58,11 @@ class IpfsPlatformWeb implements IpfsPlatform {
   bool get isIO => false;
 
   @override
+  String get pathSeparator => '/';
+
+  @override
   Future<void> writeBytes(List<String> fileNames, Uint8List bytes) async {
-    final path = await joinPath(fileNames);
+    final path = fileNames.join(pathSeparator);
     await _ensureReady();
 
     // Always update memory cache
@@ -87,7 +89,7 @@ class IpfsPlatformWeb implements IpfsPlatform {
 
   @override
   Future<Uint8List?> readBytes(List<String> fileNames) async {
-    final path = await joinPath(fileNames);
+    final path = fileNames.join(pathSeparator);
     await _ensureReady();
 
     // Check memory cache first
@@ -116,7 +118,7 @@ class IpfsPlatformWeb implements IpfsPlatform {
 
   @override
   Future<bool> exists(List<String> fileNames) async {
-    final path = await joinPath(fileNames);
+    final path = fileNames.join(pathSeparator);
     await _ensureReady();
 
     if (_memoryCache.containsKey(path) || _directories.contains(path)) {
@@ -140,7 +142,7 @@ class IpfsPlatformWeb implements IpfsPlatform {
 
   @override
   Future<void> delete(List<String> fileNames) async {
-    final path = await joinPath(fileNames);
+    final path = fileNames.join(pathSeparator);
     await _ensureReady();
 
     _memoryCache.remove(path);
@@ -160,13 +162,13 @@ class IpfsPlatformWeb implements IpfsPlatform {
 
   @override
   Future<void> createDirectory(List<String> fileNames) async {
-    final path = await joinPath(fileNames);
+    final path = fileNames.join(pathSeparator);
     _directories.add(path);
   }
 
   @override
   Future<List<String>> listDirectory(List<String> fileNames) async {
-    final path = await joinPath(fileNames);
+    final path = fileNames.join(pathSeparator);
     await _ensureReady();
 
     final entries = <String>{};
