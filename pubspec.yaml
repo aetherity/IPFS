@@ -65,7 +65,9 @@ dependencies:
   sodium: ^4.0.2+1
 
   dart_lz4: ^1.0.0
-  port_forwarder: ^1.0.0
+  port_forwarder:
+    git:
+      url: https://github.com/aetherity/port_forwarder.git
   get_it: ^9.2.1
 
 dev_dependencies:
