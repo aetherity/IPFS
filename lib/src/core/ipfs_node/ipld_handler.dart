@@ -1,4 +1,6 @@
 // src/core/ipfs_node/ipld_handler.dart
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -10,7 +12,6 @@ import 'package:dart_ipfs/src/core/data_structures/block.dart';
 import 'package:dart_ipfs/src/core/data_structures/blockstore.dart';
 import 'package:dart_ipfs/src/core/data_structures/merkle_dag_node.dart';
 import 'package:dart_ipfs/src/core/data_structures/metadata.dart';
-import 'package:dart_ipfs/src/core/errors/ipld_errors.dart';
 import 'package:dart_ipfs/src/core/errors/node_errors.dart';
 import 'package:dart_ipfs/src/core/interfaces/i_lifecycle.dart';
 import 'package:dart_ipfs/src/core/ipld/codecs/advanced_codecs.dart';
@@ -21,6 +22,7 @@ import 'package:dart_ipfs/src/core/ipld/schema/ipld_schema.dart';
 import 'package:dart_ipfs/src/core/ipld/selectors/ipld_selector.dart';
 import 'package:dart_ipfs/src/proto/generated/ipld/data_model.pb.dart';
 import 'package:dart_ipfs/src/proto/generated/unixfs/unixfs.pb.dart';
+import 'package:dart_ipfs/src/utils/encoding.dart';
 import 'package:dart_ipfs/src/utils/logger.dart';
 import 'package:dart_multihash/dart_multihash.dart' as multihash_lib;
 import 'package:fixnum/fixnum.dart';
@@ -40,6 +42,7 @@ class IPLDHandler implements ILifecycle {
   final BlockStore _blockStore;
   final Map<String, IPLDSchema> _schemas = {};
   final Map<String, IPLDCodec> _codecs = {};
+  final Map<int, IPLDCodec> _codecsByCode = {};
   late final Logger _logger;
   bool _isRunning = true;
 
@@ -57,11 +60,11 @@ class IPLDHandler implements ILifecycle {
         (node) async => _getRecipientKey(node),
       ),
     );
-    _registerCodec(CarCodec(_blockStore, _decodeData));
   }
 
   void _registerCodec(IPLDCodec codec) {
-    _codecs[codec.identifier] = codec;
+    _codecs[codec.name] = codec;
+    _codecsByCode[codec.code] = codec;
   }
 
   /// Registers a codec for IPLD data.
@@ -125,6 +128,31 @@ class IPLDHandler implements ILifecycle {
     }
   }
 
+  /// Loads a block from the store and returns it as a raw [IPLDNode].
+  ///
+  /// This is used by the spec-compliant selector executor, which needs the
+  /// decoded data-model node (including links) rather than the unwrapped Dart
+  /// value returned by [get].
+  Future<IPLDNode> getNode(CID cid) async {
+    if (!_isRunning) {
+      throw ComponentError('IPLDHandler', 'Handler is not running');
+    }
+    try {
+      final response = await _blockStore.getBlock(cid.toString());
+      if (!response.found) {
+        throw IPLDLinkError('Block not found: $cid');
+      }
+      final block = response.block;
+      return await _decodeData(
+        Uint8List.fromList(block.data),
+        block.format.isNotEmpty ? block.format : (cid.codec ?? 'dag-cbor'),
+      );
+    } catch (e, st) {
+      _logger.error('Failed to load IPLD node', e, st);
+      rethrow;
+    }
+  }
+
   /// Resolves a path through IPLD data
   Future<(dynamic, String?)> resolveLink(CID root, String path) async {
     if (!_isRunning) {
@@ -169,7 +197,10 @@ class IPLDHandler implements ILifecycle {
 
     try {
       final encoded = await codec.encode(node);
-      final cid = await CID.computeForData(encoded, format: codecId);
+      // Use the codec's multicodec code for the CID and the codec name for the
+      // block format metadata, per the IPLD codec reconciliation decision.
+      final format = EncodingUtils.getCodecFromCode(codec.code);
+      final cid = await CID.computeForData(encoded, format: format);
       return (encoded, cid);
     } catch (e) {
       throw IPLDEncodingError('Failed to encode $codecId: $e');
@@ -223,6 +254,7 @@ class IPLDHandler implements ILifecycle {
   Future<Map<String, dynamic>> getStatus() async {
     return {
       'supported_codecs': _codecs.keys.toList(),
+      'supported_codec_codes': _codecsByCode.keys.toList(),
       'enabled': _config.enableIPLD,
       'running': _isRunning,
     };
@@ -317,6 +349,30 @@ class IPLDHandler implements ILifecycle {
 
     await traverse(rootCid, selector);
     return results;
+  }
+
+  /// Executes a spec-compliant [Selector] against a root CID.
+  ///
+  /// Yields a stream of [SelectedNode] values for every node matched by the
+  /// selector. The stream enforces [maxDepth] and [maxNodes] budgets and
+  /// throws [SelectorBudgetExceeded] if either is exceeded.
+  Stream<SelectedNode> executeSelectorStream(
+    CID root,
+    Selector selector, {
+    int? maxDepth,
+    int? maxNodes,
+    bool includePath = false,
+  }) {
+    if (!_isRunning) {
+      throw ComponentError('IPLDHandler', 'Handler is not running');
+    }
+    final executor = SelectorExecutor(
+      getNode,
+      maxDepth: maxDepth ?? defaultSelectorMaxDepth,
+      maxNodes: maxNodes ?? defaultSelectorMaxNodes,
+      includePath: includePath,
+    );
+    return executor.execute(root, selector);
   }
 
   Future<void> _traverseLinks(

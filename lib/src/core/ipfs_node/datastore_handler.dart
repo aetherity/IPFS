@@ -1,17 +1,15 @@
 // src/core/ipfs_node/datastore_handler.dart
 import 'dart:typed_data';
 
-import 'package:dart_ipfs/src/core/cid.dart';
-import 'package:dart_ipfs/src/core/errors/node_errors.dart';
-import 'package:dart_ipfs/src/core/interfaces/i_lifecycle.dart';
-import 'package:dart_ipfs/src/core/storage/datastore.dart';
-import 'package:dart_ipfs/src/utils/car_reader.dart';
-import 'package:dart_ipfs/src/utils/car_writer.dart';
-import 'package:dart_ipfs/src/utils/logger.dart';
-
+import '../../utils/car_reader.dart';
+import '../../utils/car_writer.dart';
+import '../../utils/logger.dart';
+import '../cid.dart';
 import '../data_structures/block.dart';
-import '../data_structures/car.dart';
 import '../data_structures/merkle_dag_node.dart';
+import '../errors/node_errors.dart';
+import '../interfaces/i_lifecycle.dart';
+import '../storage/datastore.dart';
 
 /// Handles datastore operations for an IPFS node.
 ///
@@ -152,13 +150,18 @@ class DatastoreHandler implements ILifecycle {
   /// Imports a CAR (Content Addressable Archive) [carFile] into the datastore.
   Future<void> importCAR(Uint8List carFile) async {
     try {
-      final car = await CarReader.readCar(carFile);
+      final reader = CarReader.fromBytes(carFile);
       int count = 0;
 
-      for (var block in car.blocks) {
+      await for (final section in reader.sections()) {
+        final block = Block(
+          cid: section.cid,
+          data: section.bytes,
+          format: section.cid.codec ?? 'raw',
+        );
         await putBlock(block);
         count++;
-        _logger.verbose('Imported block with CID: ${block.cid}');
+        _logger.verbose('Imported block with CID: ${section.cid}');
       }
       _logger.info('Imported $count blocks from CAR file');
     } catch (e, stackTrace) {
@@ -189,12 +192,12 @@ class DatastoreHandler implements ILifecycle {
         await _recursiveGetBlocks(rootNode, blocks);
       }
 
-      final car = CAR(
-        blocks: blocks,
-        header: CarHeader(version: 1, roots: [blocks.first.cid]),
-      );
+      final writer = CarWriter(roots: [blocks.first.cid]);
+      for (final block in blocks) {
+        await writer.write(block.cid, block.data);
+      }
 
-      final carData = await CarWriter.writeCar(car);
+      final carData = await writer.close();
       _logger.info(
         'Exported CAR file for root CID: $cid (${blocks.length} blocks)',
       );

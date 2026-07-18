@@ -187,6 +187,18 @@ class MockIPLDCodec extends _i1.Mock implements _i9.IPLDCodec {
   }
 
   @override
+  String get name =>
+      (super.noSuchMethod(
+            Invocation.getter(#name),
+            returnValue: _i6.dummyValue<String>(this, Invocation.getter(#name)),
+          )
+          as String);
+
+  @override
+  int get code =>
+      (super.noSuchMethod(Invocation.getter(#code), returnValue: 0) as int);
+
+  @override
   String get identifier =>
       (super.noSuchMethod(
             Invocation.getter(#identifier),

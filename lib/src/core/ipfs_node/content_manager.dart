@@ -2,23 +2,25 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:dart_ipfs/src/core/cid.dart';
-import 'package:dart_ipfs/src/core/data_structures/block.dart';
-import 'package:dart_ipfs/src/core/data_structures/blockstore.dart';
-import 'package:dart_ipfs/src/core/data_structures/directory.dart';
-import 'package:dart_ipfs/src/core/data_structures/link.dart';
-import 'package:dart_ipfs/src/core/data_structures/merkle_dag_node.dart';
-import 'package:dart_ipfs/src/core/data_structures/pin.dart';
-import 'package:dart_ipfs/src/core/errors/node_errors.dart';
-import 'package:dart_ipfs/src/core/interfaces/i_lifecycle.dart';
-import 'package:dart_ipfs/src/core/ipfs_node/datastore_handler.dart';
-import 'package:dart_ipfs/src/core/ipfs_node/ipfs_node.dart';
-import 'package:dart_ipfs/src/core/storage/datastore.dart';
-import 'package:dart_ipfs/src/proto/generated/core/pin.pb.dart';
-import 'package:dart_ipfs/src/protocols/bitswap/bitswap_handler.dart';
-import 'package:dart_ipfs/src/transport/http_gateway_client.dart';
-import 'package:dart_ipfs/src/utils/logger.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
+
+import '../../proto/generated/core/pin.pb.dart';
+import '../../protocols/bitswap/bitswap_handler.dart';
+import '../../transport/http_gateway_client.dart';
+import '../../utils/logger.dart';
+import '../cid.dart';
+import '../data_structures/block.dart';
+import '../data_structures/blockstore.dart';
+import '../data_structures/directory.dart';
+import '../data_structures/link.dart';
+import '../data_structures/merkle_dag_node.dart';
+import '../data_structures/pin.dart';
+import '../errors/node_errors.dart';
+import '../interfaces/i_lifecycle.dart';
+import '../security/denylist_service.dart';
+import '../storage/datastore.dart';
+import 'datastore_handler.dart';
+import 'ipfs_node.dart';
 
 /// Manages content-related operations for the IPFS node.
 class ContentManager implements ILifecycle {
@@ -28,15 +30,18 @@ class ContentManager implements ILifecycle {
     required StreamController<String> newContentController,
     BlockStore? blockStore,
     BitswapHandler? bitswapHandler,
+    DenylistService? denylistService,
   }) : _datastoreHandler = datastoreHandler,
        _newContentController = newContentController,
        _blockStore = blockStore,
        _bitswapHandler = bitswapHandler,
+       _denylistService = denylistService,
        _logger = Logger('ContentManager');
 
   final DatastoreHandler _datastoreHandler;
   final BlockStore? _blockStore;
   final BitswapHandler? _bitswapHandler;
+  final DenylistService? _denylistService;
   final Logger _logger;
   final HttpGatewayClient _httpGatewayClient = HttpGatewayClient();
   final StreamController<String> _newContentController;
@@ -56,6 +61,7 @@ class ContentManager implements ILifecycle {
     try {
       final block = await Block.fromData(data);
       await _datastoreHandler.putBlock(block);
+      await _blockStore?.putBlock(block);
       _newContentController.add(block.cid.toString());
       _logger.info('Added file with CID: ${block.cid}');
       return block.cid.toString();
@@ -122,6 +128,7 @@ class ContentManager implements ILifecycle {
       );
 
       await _datastoreHandler.putBlock(block);
+      await _blockStore?.putBlock(block);
       _logger.info('Added directory with CID: ${block.cid}');
       return block.cid.toString();
     } catch (e, stackTrace) {
@@ -138,6 +145,14 @@ class ContentManager implements ILifecycle {
     String customGatewayUrl = '',
   }) async {
     try {
+      final denylist = _denylistService;
+      if (denylist != null && denylist.isBlockedByCidString(cid)) {
+        final action = denylist.recordHit(cid, source: 'rpc');
+        if (action == 'block') {
+          throw StateError('Content blocked by operator policy');
+        }
+      }
+
       if (gatewayMode != GatewayMode.internal) {
         return await _getViaGateway(cid, gatewayMode, customGatewayUrl);
       }
@@ -145,14 +160,15 @@ class ContentManager implements ILifecycle {
       final block = await _datastoreHandler.getBlock(cid);
 
       if (block != null) {
-        if (path.isEmpty) {
-          return block.data;
-        } else {
-          final node = MerkleDAGNode.fromBytes(block.data);
-          if (node.isDirectory) {
-            return await _resolvePathInDirectory(node, path);
-          }
-        }
+        return await _extractBlockData(block, path);
+      }
+
+      final blockResult = await _blockStore?.getBlock(cid);
+      if (blockResult != null && blockResult.found) {
+        return await _extractBlockData(
+          Block.fromProto(blockResult.block),
+          path,
+        );
       }
 
       if (_bitswapHandler != null) {
@@ -197,6 +213,18 @@ class ContentManager implements ILifecycle {
     return await _httpGatewayClient.get(cid, baseUrl: url);
   }
 
+  Future<Uint8List?> _extractBlockData(Block block, String path) async {
+    if (path.isEmpty) {
+      return block.data;
+    } else {
+      final node = MerkleDAGNode.fromBytes(block.data);
+      if (node.isDirectory) {
+        return await _resolvePathInDirectory(node, path);
+      }
+    }
+    return null;
+  }
+
   Future<Uint8List?> _resolvePathInDirectory(
     MerkleDAGNode dirNode,
     String path,
@@ -232,6 +260,13 @@ class ContentManager implements ILifecycle {
 
       if (block == null && _bitswapHandler != null) {
         block = await _bitswapHandler.wantBlock(cid);
+      }
+
+      if (block == null) {
+        final blockResult = await _blockStore?.getBlock(cid);
+        if (blockResult != null && blockResult.found) {
+          block = Block.fromProto(blockResult.block);
+        }
       }
 
       if (block == null) {

@@ -7,6 +7,26 @@ import 'package:dart_ipfs/src/utils/encoding.dart';
 import 'package:dart_multihash/dart_multihash.dart';
 import 'package:multibase/multibase.dart';
 
+/// Decodes a multibase-encoded string, using a corrected base32 lower decoder
+/// because package:multibase mishandles unpadded base32 strings that start with
+/// a leading zero data character (e.g. canonical `bafk...` CIDs).
+Uint8List _decodeMultibase(String cidStr) {
+  if (cidStr.isEmpty) throw ArgumentError('Empty CID string');
+  if (cidStr.startsWith('b')) {
+    return EncodingUtils.base32LowerDecode(cidStr.substring(1));
+  }
+  return multibaseDecode(cidStr);
+}
+
+/// Encodes bytes using the requested multibase encoding. Base32 lower is
+/// produced with the corrected, unpadded RFC 4648 encoder.
+String _encodeMultibase(Multibase base, Uint8List bytes) {
+  if (base == Multibase.base32) {
+    return 'b${EncodingUtils.base32LowerEncode(bytes)}';
+  }
+  return multibaseEncode(base, bytes);
+}
+
 /// A Content Identifier (CID) for content-addressed data in IPFS.
 ///
 /// CIDs are self-describing content addresses used to uniquely identify
@@ -101,10 +121,10 @@ class CID {
 
     // CIDv0 check (SHA2-256)
     // 0x12 0x20 ... (34 bytes total)
-    if (bytes.length == 34 && bytes[0] == 0x12 && bytes[1] == 0x20) {
+    if (bytes.length >= 34 && bytes[0] == 0x12 && bytes[1] == 0x20) {
       return CID(
         version: 0,
-        multihash: Multihash.decode(bytes),
+        multihash: Multihash.decode(bytes.sublist(0, 34)),
         codec: 'dag-pb',
         multibaseType: Multibase.base58btc,
       );
@@ -112,20 +132,22 @@ class CID {
 
     // CIDv1 check
     if (bytes[0] == 0x01) {
-      int index = 1;
-      int codecCode = 0;
-      int shift = 0;
-      while (true) {
-        if (index >= bytes.length) {
-          throw const FormatException('Invalid CID bytes');
-        }
-        int byte = bytes[index++];
-        codecCode |= (byte & 0x7f) << shift;
-        if ((byte & 0x80) == 0) break;
-        shift += 7;
-      }
+      var index = 1;
+      final (codecLen, codecCode) = readVarint(bytes, index);
+      index += codecLen;
 
-      final mh = Multihash.decode(bytes.sublist(index));
+      // Parse the multihash prefix to determine the exact multihash byte
+      // boundary so the decoder does not see trailing block bytes.
+      final mhStart = index;
+      final (codeLen, _) = readVarint(bytes, index);
+      index += codeLen;
+      final (lenLen, digestLen) = readVarint(bytes, index);
+      index += lenLen;
+      final mhEnd = index + digestLen;
+      if (mhEnd > bytes.length) {
+        throw const FormatException('Invalid CID bytes: multihash truncated');
+      }
+      final mh = Multihash.decode(bytes.sublist(mhStart, mhEnd));
 
       String codecStr;
       try {
@@ -165,31 +187,87 @@ class CID {
     // Check if it's a CIDv0 (base58, starts with 'Qm')
     if (cidStr.startsWith('Qm')) {
       // Decode base58
-      final decoded = multibaseDecode(
+      final decoded = _decodeMultibase(
         'z$cidStr',
       ); // Add 'z' prefix for base58btc
       return fromBytes(decoded);
     }
 
     // CIDv1: multibase encoded
-    final decoded = multibaseDecode(cidStr);
+    final decoded = _decodeMultibase(cidStr);
     return fromBytes(decoded);
   }
 
   /// Encodes the CID to its string representation.
-  String encode() {
+  String encode() => encodeWithBase(multibaseType);
+
+  /// Returns the CID prefix bytes (version + codec + multihash function + hash
+  /// length), omitting the digest itself.
+  ///
+  /// This is the format used by Bitswap/GraphSync [Block.prefix] to allow the
+  /// receiver to reconstruct the CID from the prefix and block data.
+  Uint8List toPrefixBytes() {
+    final bytes = toBytes();
+    final digestLength = multihash.size;
+    if (bytes.length <= digestLength) {
+      return bytes;
+    }
+    return Uint8List.fromList(bytes.sublist(0, bytes.length - digestLength));
+  }
+
+  /// Encodes the CID using the requested [base].
+  ///
+  /// CIDv0 is always returned as base58btc regardless of the requested base.
+  /// CIDv1 defaults to base32 when [base] is null.
+  String encodeWithBase(Multibase? base) {
     if (version == 0) {
       // CIDv0: base58-encoded multihash (no prefix)
       final mhBytes = multihash.toBytes();
-      final encoded = multibaseEncode(Multibase.base58btc, mhBytes);
+      final encoded = _encodeMultibase(Multibase.base58btc, mhBytes);
       // Remove the 'z' prefix for CIDv0
       return encoded.substring(1);
     }
 
     // CIDv1: <version><codec><multihash>
     final bytes = toBytes();
-    final baseType = multibaseType ?? Multibase.base32;
-    return multibaseEncode(baseType, bytes);
+    final baseType = base ?? multibaseType ?? Multibase.base32;
+    return _encodeMultibase(baseType, bytes);
+  }
+
+  /// Encodes the CID using the base identified by [baseName].
+  ///
+  /// Common names: `base58`, `base58btc`, `base32`, `base32upper`, `base16`,
+  /// `base16upper`, `base64`, `base64url`, `base64urlpad`. Unknown names fall
+  /// back to the CID's default encoding.
+  String encodeWithBaseName(String baseName) {
+    final base = _multibaseFromName(baseName);
+    return encodeWithBase(base);
+  }
+
+  static Multibase _multibaseFromName(String name) {
+    switch (name.toLowerCase()) {
+      case 'base16':
+      case 'base16lower':
+        return Multibase.base16;
+      case 'base16upper':
+        return Multibase.base16upper;
+      case 'base32':
+      case 'base32lower':
+        return Multibase.base32;
+      case 'base32upper':
+        return Multibase.base32upper;
+      case 'base58':
+      case 'base58btc':
+        return Multibase.base58btc;
+      case 'base64':
+        return Multibase.base64;
+      case 'base64url':
+        return Multibase.base64url;
+      case 'base64urlpad':
+        return Multibase.base64urlpad;
+      default:
+        return Multibase.base32;
+    }
   }
 
   /// Converts the CID to its binary representation.
@@ -223,6 +301,35 @@ class CID {
     buffer.add(multihash.toBytes());
 
     return buffer.toBytes();
+  }
+
+  /// Reconstructs a CID from a [prefix] (version + codec + multihash function
+  /// + hash length) and the raw block [data].
+  ///
+  /// The digest is computed from [data] using the provided [hashType]. The
+  /// resulting CID is only valid if the computed prefix matches the supplied
+  /// prefix, which is verified by [validate].
+  static Future<CID> fromPrefixBytes(
+    Uint8List prefix,
+    Uint8List data, {
+    String hashType = 'sha2-256',
+  }) async {
+    final codec = _codecFromPrefixBytes(prefix);
+    return fromContent(data, codec: codec, hashType: hashType);
+  }
+
+  static String _codecFromPrefixBytes(Uint8List prefix) {
+    if (prefix.isEmpty) return 'raw';
+    if (prefix[0] == 0x01) {
+      final (codecLen, codecCode) = readVarint(prefix, 1);
+      try {
+        return EncodingUtils.getCodecFromCode(codecCode);
+      } catch (_) {
+        return 'unknown';
+      }
+    }
+    // CIDv0 is always dag-pb.
+    return 'dag-pb';
   }
 
   /// Validates the CID.
@@ -266,6 +373,27 @@ class CID {
     }
     bytes.add(value & 0x7f);
     return Uint8List.fromList(bytes);
+  }
+
+  /// Reads a protobuf-style varint from [bytes] starting at [offset].
+  ///
+  /// Returns a tuple `(length, value)` where [length] is the number of bytes
+  /// consumed and [value] is the decoded integer.
+  static (int, int) readVarint(Uint8List bytes, int offset) {
+    var value = 0;
+    var shift = 0;
+    for (var i = 0; i < 10; i++) {
+      if (offset + i >= bytes.length) {
+        throw const FormatException('Truncated varint');
+      }
+      final b = bytes[offset + i];
+      value |= (b & 0x7f) << shift;
+      if ((b & 0x80) == 0) {
+        return (i + 1, value);
+      }
+      shift += 7;
+    }
+    throw const FormatException('Varint too long');
   }
 
   /// Converts the CID to a Protobuf representation.

@@ -8,6 +8,7 @@ import 'package:dart_ipfs/src/core/data_structures/blockstore.dart';
 import 'package:dart_ipfs/src/core/data_structures/link.dart';
 import 'package:dart_ipfs/src/core/data_structures/pin_manager.dart';
 import 'package:dart_ipfs/src/core/ipfs_node/ipfs_node.dart';
+import 'package:dart_ipfs/src/core/security/denylist_service.dart';
 import 'package:dart_ipfs/src/proto/generated/core/block.pb.dart';
 import 'package:dart_ipfs/src/proto/generated/core/blockstore.pb.dart';
 import 'package:dart_ipfs/src/protocols/dht/dht_client.dart';
@@ -101,6 +102,9 @@ class MockIPFSNode implements IPFSNode {
   DHTClient get dhtClient => _dhtClient;
 
   @override
+  DenylistService? get denylistService => null;
+
+  @override
   Future<Uint8List?> cat(String cid) async {
     final block = await _blockStore.getBlock(cid);
     if (block.found) return Uint8List.fromList(block.block.data);
@@ -132,7 +136,8 @@ class MockIPFSNode implements IPFSNode {
   Future<void> disconnectFromPeer(String peerId) async {}
 
   @override
-  Future<void> publishIPNS(String cid, {required String keyName}) async {}
+  Future<String> publishIPNS(String cid, {required String keyName}) async =>
+      'k51ipns';
 
   @override
   Future<String> resolveIPNS(String name) async => '/ipfs/QmResolved';

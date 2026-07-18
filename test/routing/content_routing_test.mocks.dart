@@ -6,6 +6,7 @@
 import 'dart:async' as _i10;
 import 'dart:typed_data' as _i13;
 
+import 'package:dart_ipfs/src/core/cid.dart' as _i15;
 import 'package:dart_ipfs/src/core/config/ipfs_config.dart' as _i6;
 import 'package:dart_ipfs/src/core/ipfs_node/ipfs_node.dart' as _i2;
 import 'package:dart_ipfs/src/core/ipfs_node/network_handler.dart' as _i7;
@@ -454,6 +455,15 @@ class MockDHTClient extends _i1.Mock implements _i14.DHTClient {
           as _i10.Future<void>);
 
   @override
+  _i10.Future<void> addProviders(List<_i15.CID>? cids, String? providerId) =>
+      (super.noSuchMethod(
+            Invocation.method(#addProviders, [cids, providerId]),
+            returnValue: _i10.Future<void>.value(),
+            returnValueForMissingStub: _i10.Future<void>.value(),
+          )
+          as _i10.Future<void>);
+
+  @override
   _i10.Future<bool> storeValue(_i13.Uint8List? key, _i13.Uint8List? value) =>
       (super.noSuchMethod(
             Invocation.method(#storeValue, [key, value]),
@@ -485,6 +495,24 @@ class MockDHTClient extends _i1.Mock implements _i14.DHTClient {
           as _i10.Future<_i13.Uint8List?>);
 
   @override
+  _i10.Future<bool> storeValueRaw(_i13.Uint8List? key, _i13.Uint8List? value) =>
+      (super.noSuchMethod(
+            Invocation.method(#storeValueRaw, [key, value]),
+            returnValue: _i10.Future<bool>.value(false),
+            returnValueForMissingStub: _i10.Future<bool>.value(false),
+          )
+          as _i10.Future<bool>);
+
+  @override
+  _i10.Future<_i13.Uint8List?> getValueRaw(_i13.Uint8List? key) =>
+      (super.noSuchMethod(
+            Invocation.method(#getValueRaw, [key]),
+            returnValue: _i10.Future<_i13.Uint8List?>.value(),
+            returnValueForMissingStub: _i10.Future<_i13.Uint8List?>.value(),
+          )
+          as _i10.Future<_i13.Uint8List?>);
+
+  @override
   _i10.Future<bool> checkValueOnPeer(_i8.PeerId? peer, _i13.Uint8List? key) =>
       (super.noSuchMethod(
             Invocation.method(#checkValueOnPeer, [peer, key]),
@@ -492,6 +520,18 @@ class MockDHTClient extends _i1.Mock implements _i14.DHTClient {
             returnValueForMissingStub: _i10.Future<bool>.value(false),
           )
           as _i10.Future<bool>);
+
+  @override
+  _i10.Future<void> sendMessageRaw(
+    _i8.PeerId? peer,
+    _i13.Uint8List? msgBytes,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendMessageRaw, [peer, msgBytes]),
+            returnValue: _i10.Future<void>.value(),
+            returnValueForMissingStub: _i10.Future<void>.value(),
+          )
+          as _i10.Future<void>);
 
   @override
   _i10.Future<void> start() =>
@@ -530,6 +570,15 @@ class MockDHTClient extends _i1.Mock implements _i14.DHTClient {
             ),
           )
           as _i10.Future<List<String>>);
+
+  @override
+  _i10.Future<void> reprovide() =>
+      (super.noSuchMethod(
+            Invocation.method(#reprovide, []),
+            returnValue: _i10.Future<void>.value(),
+            returnValueForMissingStub: _i10.Future<void>.value(),
+          )
+          as _i10.Future<void>);
 
   @override
   _i10.Future<void> updateKeyRepublishTime(String? key) =>

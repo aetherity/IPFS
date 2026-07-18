@@ -7,7 +7,7 @@
 build/
 
 # Lockfile (consider committing if it's an application)
-pubspec.lock
+# Note: dart_ipfs is a library package, so we commit pubspec.lock for reproducible builds
 
 # Miscellaneous
 *.class
@@ -20,6 +20,7 @@ pubspec.lock
 .history
 .svn/
 migrate_working_dir/
+scratch/
 
 # IntelliJ related
 *.iml
@@ -30,6 +31,7 @@ migrate_working_dir/
 # VS Code related
 .vscode/
 .gemini/
+.playwright-mcp/
 .fastembed_cache/
 
 # Flutter/Dart/Pub related
@@ -80,6 +82,11 @@ test_data/
 tmp/
 temp/
 .tmp/
+test_blocks/
+test_blocks_log/
+test_tmp/
+test_repo/
+test/interop/swarm.key
 
 # Logs
 logs/
@@ -108,6 +115,9 @@ lib_analysis_errors.txt
 lint_issues.txt
 pub_get_error.txt
 git_status_output.txt
+all_tests_*.txt
+analysis_errors.txt
+current_test_output.txt
 
 # Temporary backups
 temp_backup/
@@ -263,3 +273,7 @@ paket-files/
 # Test Artifacts
 ipfs_facade_*
 verify.log
+
+# Ciel local domain
+.ciel/
+.mempalace/

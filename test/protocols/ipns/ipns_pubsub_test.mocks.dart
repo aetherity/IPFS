@@ -326,6 +326,18 @@ class MockDHTHandler extends _i1.Mock implements _i12.DHTHandler {
           as bool);
 
   @override
+  bool isValidProviderRecord(
+    _i16.PeerId? provider,
+    String? cid,
+    DateTime? ttl,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#isValidProviderRecord, [provider, cid, ttl]),
+            returnValue: false,
+          )
+          as bool);
+
+  @override
   String? extractCIDFromResponse(String? responseBody) =>
       (super.noSuchMethod(
             Invocation.method(#extractCIDFromResponse, [responseBody]),
@@ -352,6 +364,15 @@ class MockDHTHandler extends _i1.Mock implements _i12.DHTHandler {
           as _i9.Future<void>);
 
   @override
+  _i9.Future<void> provideAll(List<_i14.CID>? cids) =>
+      (super.noSuchMethod(
+            Invocation.method(#provideAll, [cids]),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
+          )
+          as _i9.Future<void>);
+
+  @override
   _i9.Future<void> handleRoutingTableUpdate(_i13.V_PeerInfo? peer) =>
       (super.noSuchMethod(
             Invocation.method(#handleRoutingTableUpdate, [peer]),
@@ -368,6 +389,14 @@ class MockDHTHandler extends _i1.Mock implements _i12.DHTHandler {
             returnValueForMissingStub: _i9.Future<void>.value(),
           )
           as _i9.Future<void>);
+
+  @override
+  List<_i16.PeerId> getLocalProvidersForCid(String? cidStr) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLocalProvidersForCid, [cidStr]),
+            returnValue: <_i16.PeerId>[],
+          )
+          as List<_i16.PeerId>);
 
   @override
   _i9.Future<String?> resolveDNSLink(String? domainName) =>

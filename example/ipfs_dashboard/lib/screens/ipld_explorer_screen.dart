@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../services/node_service.dart';
 import 'dart:convert';
@@ -273,8 +273,9 @@ class _IPLDExplorerScreenState extends State<IPLDExplorerScreen> {
                           style: TextStyle(
                             color: isLast ? Colors.cyanAccent : Colors.white54,
                             fontSize: 12,
-                            fontWeight:
-                                isLast ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isLast
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -293,13 +294,13 @@ class _IPLDExplorerScreenState extends State<IPLDExplorerScreen> {
                       ),
                     )
                   : _error != null
-                      ? Center(
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(color: Colors.redAccent),
-                          ),
-                        )
-                      : _buildExplorerView(),
+                  ? Center(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    )
+                  : _buildExplorerView(),
             ),
           ],
         ),

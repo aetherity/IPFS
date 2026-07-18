@@ -2,17 +2,23 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dart_ipfs/src/core/cbor/enhanced_cbor_handler.dart';
-import 'package:dart_ipfs/src/core/data_structures/link.dart';
-import 'package:dart_ipfs/src/core/data_structures/merkle_dag_node.dart';
-import 'package:dart_ipfs/src/core/ipld/codecs/ipld_codec.dart';
-import 'package:dart_ipfs/src/core/ipld/dag_json_handler.dart';
-import 'package:dart_ipfs/src/proto/generated/ipld/data_model.pb.dart';
+import '../../../proto/generated/ipld/data_model.pb.dart';
+import '../../cbor/enhanced_cbor_handler.dart';
+import '../../data_structures/link.dart';
+import '../../data_structures/merkle_dag_node.dart';
+import '../dag_json_handler.dart';
+import 'ipld_codec.dart';
 
 /// Codec for 'raw' data.
 class RawCodec implements IPLDCodec {
   @override
-  String get identifier => 'raw';
+  String get name => 'raw';
+
+  @override
+  String get identifier => name;
+
+  @override
+  int get code => 0x55;
 
   @override
   Future<Uint8List> encode(IPLDNode node) async {
@@ -33,7 +39,13 @@ class RawCodec implements IPLDCodec {
 /// Codec for 'dag-pb' (Protobuf).
 class DagPbCodec implements IPLDCodec {
   @override
-  String get identifier => 'dag-pb';
+  String get name => 'dag-pb';
+
+  @override
+  String get identifier => name;
+
+  @override
+  int get code => 0x70;
 
   @override
   Future<Uint8List> encode(IPLDNode node) async {
@@ -52,10 +64,12 @@ class DagPbCodec implements IPLDCodec {
       throw ArgumentError('Cannot convert non-map to MerkleDAGNode');
     }
 
-    final data = node.mapValue.entries
-        .firstWhere((e) => e.key == 'Data', orElse: () => MapEntry())
-        .value
-        .bytesValue;
+    final dataEntry = node.mapValue.entries.firstWhere(
+      (e) => e.key == 'Data',
+      orElse: () => MapEntry(),
+    );
+
+    final data = dataEntry.value.bytesValue;
 
     final linkEntries = node.mapValue.entries
         .firstWhere((e) => e.key == 'Links', orElse: () => MapEntry())
@@ -63,26 +77,27 @@ class DagPbCodec implements IPLDCodec {
         .listValue
         .values;
 
-    final List<Link> links = linkEntries.map((linkNode) {
+    final List<Link> links = linkEntries.cast<IPLDNode>().map((linkNode) {
       if (linkNode.kind != Kind.MAP) {
         throw ArgumentError('Invalid link format');
       }
       return EnhancedCBORHandler.convertToMerkleLink(linkNode);
     }).toList();
 
-    return MerkleDAGNode(
-      links: links,
-      data: Uint8List.fromList(data),
-      mtime: DateTime.now().millisecondsSinceEpoch,
-      isDirectory: false,
-    );
+    return MerkleDAGNode(links: links, data: Uint8List.fromList(data));
   }
 }
 
 /// Codec for 'dag-cbor' (CBOR).
 class DagCborCodec implements IPLDCodec {
   @override
-  String get identifier => 'dag-cbor';
+  String get name => 'dag-cbor';
+
+  @override
+  String get identifier => name;
+
+  @override
+  int get code => 0x71;
 
   @override
   Future<Uint8List> encode(IPLDNode node) async {
@@ -98,7 +113,13 @@ class DagCborCodec implements IPLDCodec {
 /// Codec for 'dag-json' (JSON).
 class DagJsonCodec implements IPLDCodec {
   @override
-  String get identifier => 'dag-json';
+  String get name => 'dag-json';
+
+  @override
+  String get identifier => name;
+
+  @override
+  int get code => 0x0129;
 
   @override
   Future<Uint8List> encode(IPLDNode node) async {

@@ -1,5 +1,5 @@
 name: dart_ipfs
-version: 1.11.5
+version: 1.11.7
 description: A comprehensive IPFS implementation in Dart, supporting CID, Bitswap, UnixFS, and DHT.
 homepage: https://github.com/jxoesneon/IPFS
 repository: https://github.com/jxoesneon/IPFS
@@ -49,26 +49,33 @@ dependencies:
   synchronized: ^3.4.0
   multicast_dns: ^0.3.3
   ipfs_libp2p: ^0.5.6
+  cipherlib: ^0.7.1
 
   jose: ^0.3.5
   mime: ^2.0.0
   http_parser: ^4.1.2
 
+  # Core package (hosted)
+  dart_ipfs_core: ^1.11.5
+
+  # Optional native QUIC transport adapter (hosted)
+  dart_ipfs_quic: ^0.2.0
+
   # Common packages
+  args: ^2.6.0
   yaml: ^3.1.3
   meta: ^1.17.0
   shelf: ^1.4.2
   path: ^1.9.1
   grpc: ^5.1.0
   cryptography: ^2.9.0
-  # Security Overrides (Audit 2025-12-15)
-  sodium: ^4.0.2+1
 
   dart_lz4: ^1.0.0
   port_forwarder:
     git:
       url: https://github.com/aetherity/port_forwarder.git
   get_it: ^9.2.1
+  base32: ^2.2.0
 
 dev_dependencies:
   test: ^1.28.0 # For unit and integration tests
@@ -91,6 +98,18 @@ macos:
   signing:
     enable: false
 
+# Security-critical dependency overrides documented in SECURITY.md.
+# These are required during local development and CI because upstream packages
+# (e.g. port_forwarder) still allow older, vulnerable releases. Overrides are
+# not visible to package consumers, so the published package does not declare
+# these transitive dependencies directly. The publish workflow runs with these
+# overrides in place and accepts the resulting hints.
 dependency_overrides:
+  # xml ^7.0.1: Required for security fixes and compatibility with latest dependencies
+  # Resolves potential XML parsing vulnerabilities and ensures proper encoding support
   xml: ^7.0.1
+  # dart_udx ^2.0.3: Required for UDP transport stability and security patches
+  # Fixes buffer overflow issues in UDP datagram handling and improves rate limiting
   dart_udx: ^2.0.3
+
+

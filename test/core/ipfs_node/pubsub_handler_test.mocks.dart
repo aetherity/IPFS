@@ -229,6 +229,32 @@ class MockRouterInterface extends _i1.Mock implements _i3.RouterInterface {
   );
 
   @override
+  void unregisterProtocolHandler(String? protocolId) => super.noSuchMethod(
+    Invocation.method(#unregisterProtocolHandler, [protocolId]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i5.Future<_i7.Uint8List> sendMessageWithResponse(
+    String? peerId,
+    _i7.Uint8List? message, {
+    String? protocolId,
+    Duration? timeout,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #sendMessageWithResponse,
+              [peerId, message],
+              {#protocolId: protocolId, #timeout: timeout},
+            ),
+            returnValue: _i5.Future<_i7.Uint8List>.value(_i7.Uint8List(0)),
+            returnValueForMissingStub: _i5.Future<_i7.Uint8List>.value(
+              _i7.Uint8List(0),
+            ),
+          )
+          as _i5.Future<_i7.Uint8List>);
+
+  @override
   void registerProtocol(String? protocolId) => super.noSuchMethod(
     Invocation.method(#registerProtocol, [protocolId]),
     returnValueForMissingStub: null,
@@ -282,6 +308,16 @@ class MockRouterInterface extends _i1.Mock implements _i3.RouterInterface {
             returnValueForMissingStub: <String>[],
           )
           as List<String>);
+
+  @override
+  void registerRelayedConnection(String? targetPeerId, String? relayAddr) =>
+      super.noSuchMethod(
+        Invocation.method(#registerRelayedConnection, [
+          targetPeerId,
+          relayAddr,
+        ]),
+        returnValueForMissingStub: null,
+      );
 }
 
 /// A class which mocks [IpfsNodeNetworkEvents].

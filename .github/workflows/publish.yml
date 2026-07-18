@@ -13,7 +13,7 @@ jobs:
       id-token: write # Required for authentication using OIDC
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dart-lang/setup-dart@v1
         with:
@@ -21,6 +21,11 @@ jobs:
 
       - name: Install dependencies
         run: dart pub get
+
+      - name: Run pana score check
+        run: |
+          dart pub global activate pana
+          dart pub global run pana:pana . --no-warning
 
       - name: Publish - dry run
         run: dart pub publish --dry-run

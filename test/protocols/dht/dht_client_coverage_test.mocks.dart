@@ -303,6 +303,32 @@ class MockRouterInterface extends _i1.Mock implements _i3.RouterInterface {
   );
 
   @override
+  void unregisterProtocolHandler(String? protocolId) => super.noSuchMethod(
+    Invocation.method(#unregisterProtocolHandler, [protocolId]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i15.Future<_i17.Uint8List> sendMessageWithResponse(
+    String? peerId,
+    _i17.Uint8List? message, {
+    String? protocolId,
+    Duration? timeout,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #sendMessageWithResponse,
+              [peerId, message],
+              {#protocolId: protocolId, #timeout: timeout},
+            ),
+            returnValue: _i15.Future<_i17.Uint8List>.value(_i17.Uint8List(0)),
+            returnValueForMissingStub: _i15.Future<_i17.Uint8List>.value(
+              _i17.Uint8List(0),
+            ),
+          )
+          as _i15.Future<_i17.Uint8List>);
+
+  @override
   void registerProtocol(String? protocolId) => super.noSuchMethod(
     Invocation.method(#registerProtocol, [protocolId]),
     returnValueForMissingStub: null,
@@ -356,6 +382,16 @@ class MockRouterInterface extends _i1.Mock implements _i3.RouterInterface {
             returnValueForMissingStub: <String>[],
           )
           as List<String>);
+
+  @override
+  void registerRelayedConnection(String? targetPeerId, String? relayAddr) =>
+      super.noSuchMethod(
+        Invocation.method(#registerRelayedConnection, [
+          targetPeerId,
+          relayAddr,
+        ]),
+        returnValueForMissingStub: null,
+      );
 }
 
 /// A class which mocks [NetworkHandler].
@@ -658,6 +694,33 @@ class MockIPFSNode extends _i1.Mock implements _i2.IPFSNode {
                 _i15.Stream<Map<String, dynamic>>.empty(),
           )
           as _i15.Stream<Map<String, dynamic>>);
+
+  @override
+  int get bandwidthOut =>
+      (super.noSuchMethod(
+            Invocation.getter(#bandwidthOut),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
+          )
+          as int);
+
+  @override
+  int get bandwidthIn =>
+      (super.noSuchMethod(
+            Invocation.getter(#bandwidthIn),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
+          )
+          as int);
+
+  @override
+  int get dhtPeerCount =>
+      (super.noSuchMethod(
+            Invocation.getter(#dhtPeerCount),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
+          )
+          as int);
 
   @override
   List<String> get addresses =>
@@ -987,13 +1050,23 @@ class MockIPFSNode extends _i1.Mock implements _i2.IPFSNode {
           as _i15.Future<bool>);
 
   @override
-  _i15.Future<void> publishIPNS(String? cid, {required String? keyName}) =>
+  _i15.Future<String> publishIPNS(String? cid, {required String? keyName}) =>
       (super.noSuchMethod(
             Invocation.method(#publishIPNS, [cid], {#keyName: keyName}),
-            returnValue: _i15.Future<void>.value(),
-            returnValueForMissingStub: _i15.Future<void>.value(),
+            returnValue: _i15.Future<String>.value(
+              _i14.dummyValue<String>(
+                this,
+                Invocation.method(#publishIPNS, [cid], {#keyName: keyName}),
+              ),
+            ),
+            returnValueForMissingStub: _i15.Future<String>.value(
+              _i14.dummyValue<String>(
+                this,
+                Invocation.method(#publishIPNS, [cid], {#keyName: keyName}),
+              ),
+            ),
           )
-          as _i15.Future<void>);
+          as _i15.Future<String>);
 
   @override
   _i15.Future<void> importCAR(_i17.Uint8List? carFile) =>
@@ -1217,6 +1290,19 @@ class MockDHTHandler extends _i1.Mock implements _i23.DHTHandler {
           as bool);
 
   @override
+  bool isValidProviderRecord(
+    _i26.PeerId? provider,
+    String? cid,
+    DateTime? ttl,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#isValidProviderRecord, [provider, cid, ttl]),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
   String? extractCIDFromResponse(String? responseBody) =>
       (super.noSuchMethod(
             Invocation.method(#extractCIDFromResponse, [responseBody]),
@@ -1247,6 +1333,15 @@ class MockDHTHandler extends _i1.Mock implements _i23.DHTHandler {
           as _i15.Future<void>);
 
   @override
+  _i15.Future<void> provideAll(List<_i25.CID>? cids) =>
+      (super.noSuchMethod(
+            Invocation.method(#provideAll, [cids]),
+            returnValue: _i15.Future<void>.value(),
+            returnValueForMissingStub: _i15.Future<void>.value(),
+          )
+          as _i15.Future<void>);
+
+  @override
   _i15.Future<void> handleRoutingTableUpdate(_i24.V_PeerInfo? peer) =>
       (super.noSuchMethod(
             Invocation.method(#handleRoutingTableUpdate, [peer]),
@@ -1266,6 +1361,15 @@ class MockDHTHandler extends _i1.Mock implements _i23.DHTHandler {
             returnValueForMissingStub: _i15.Future<void>.value(),
           )
           as _i15.Future<void>);
+
+  @override
+  List<_i26.PeerId> getLocalProvidersForCid(String? cidStr) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLocalProvidersForCid, [cidStr]),
+            returnValue: <_i26.PeerId>[],
+            returnValueForMissingStub: <_i26.PeerId>[],
+          )
+          as List<_i26.PeerId>);
 
   @override
   _i15.Future<String?> resolveDNSLink(String? domainName) =>

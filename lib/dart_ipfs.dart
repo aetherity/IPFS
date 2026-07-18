@@ -116,8 +116,41 @@
 /// - [API Documentation](https://pub.dev/documentation/dart_ipfs/latest/)
 library;
 
-export 'src/core/cid.dart';
+// Stable core primitives re-exported from the dart_ipfs_core package.
+export 'package:dart_ipfs_core/dart_ipfs_core.dart'
+    show
+        CID,
+        MultibaseUtils,
+        Multicodec,
+        MultihashInfo,
+        MultihashUtils,
+        Block,
+        IBlock,
+        BlockStoreResult,
+        IBlockStore,
+        InMemoryBlockStore,
+        IPLDCodec,
+        RawCodec,
+        DagCborCodec,
+        DagJsonCodec,
+        CryptoUtils,
+        EncryptedData,
+        Ed25519Signer,
+        KeyPairExtensions,
+        ImmutableBytes,
+        TypedMap;
+
+// Optional pure-Dart QUIC transport from the dart_ipfs_quic package.
+// This transport is backed by quic_lib and is only active when
+// NetworkConfig.enableQuic is true. On the web a stub is exported so that
+// importing dart_ipfs does not pull the non-web-compatible quic_lib bundle.
+export 'package:dart_ipfs_quic/dart_ipfs_quic.dart'
+    if (dart.library.html) 'src/transport/quic_stub_public.dart'
+    show QuicTransport, QuicConnection, QuicListener;
+
 export 'src/core/config/ipfs_config.dart';
+export 'src/core/data_structures/car.dart';
 export 'src/core/ipfs_node/ipfs_node.dart';
+export 'src/core/ipfs_node/ipfs_web_node.dart';
 export 'src/ipfs.dart';
 export 'src/protocols/pubsub/pubsub_message.dart';

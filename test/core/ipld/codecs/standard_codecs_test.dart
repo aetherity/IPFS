@@ -10,7 +10,9 @@ void main() {
   group('RawCodec', () {
     final codec = RawCodec();
 
-    test('identifier is "raw"', () {
+    test('reports raw name, code, and identifier', () {
+      expect(codec.name, equals('raw'));
+      expect(codec.code, equals(0x55));
       expect(codec.identifier, equals('raw'));
     });
 
@@ -37,7 +39,9 @@ void main() {
   group('DagJsonCodec', () {
     final codec = DagJsonCodec();
 
-    test('identifier is "dag-json"', () {
+    test('reports dag-json name, code, and identifier', () {
+      expect(codec.name, equals('dag-json'));
+      expect(codec.code, equals(0x0129));
       expect(codec.identifier, equals('dag-json'));
     });
 
@@ -130,7 +134,9 @@ void main() {
   group('DagPbCodec', () {
     final codec = DagPbCodec();
 
-    test('identifier is "dag-pb"', () {
+    test('reports dag-pb name, code, and identifier', () {
+      expect(codec.name, equals('dag-pb'));
+      expect(codec.code, equals(0x70));
       expect(codec.identifier, equals('dag-pb'));
     });
 
@@ -252,7 +258,9 @@ void main() {
   group('DagCborCodec', () {
     final codec = DagCborCodec();
 
-    test('identifier is "dag-cbor"', () {
+    test('reports dag-cbor name, code, and identifier', () {
+      expect(codec.name, equals('dag-cbor'));
+      expect(codec.code, equals(0x71));
       expect(codec.identifier, equals('dag-cbor'));
     });
 
@@ -349,6 +357,66 @@ void main() {
       final encoded = await codec.encode(node);
       final decoded = await codec.decode(encoded);
       expect(decoded.kind, equals(Kind.NULL));
+    });
+
+    test('encode is deterministic/canonical for maps', () async {
+      final node1 = IPLDNode()
+        ..kind = Kind.MAP
+        ..mapValue = IPLDMap();
+      node1.mapValue.entries.add(
+        MapEntry()
+          ..key = 'b'
+          ..value = (IPLDNode()
+            ..kind = Kind.STRING
+            ..stringValue = 'second'),
+      );
+      node1.mapValue.entries.add(
+        MapEntry()
+          ..key = 'aa'
+          ..value = (IPLDNode()
+            ..kind = Kind.STRING
+            ..stringValue = 'third'),
+      );
+      node1.mapValue.entries.add(
+        MapEntry()
+          ..key = 'a'
+          ..value = (IPLDNode()
+            ..kind = Kind.STRING
+            ..stringValue = 'first'),
+      );
+
+      final node2 = IPLDNode()
+        ..kind = Kind.MAP
+        ..mapValue = IPLDMap();
+      node2.mapValue.entries.add(
+        MapEntry()
+          ..key = 'a'
+          ..value = (IPLDNode()
+            ..kind = Kind.STRING
+            ..stringValue = 'first'),
+      );
+      node2.mapValue.entries.add(
+        MapEntry()
+          ..key = 'b'
+          ..value = (IPLDNode()
+            ..kind = Kind.STRING
+            ..stringValue = 'second'),
+      );
+      node2.mapValue.entries.add(
+        MapEntry()
+          ..key = 'aa'
+          ..value = (IPLDNode()
+            ..kind = Kind.STRING
+            ..stringValue = 'third'),
+      );
+
+      final encoded1 = await codec.encode(node1);
+      final encoded2 = await codec.encode(node2);
+      expect(encoded1, equals(encoded2));
+
+      final decoded = await codec.decode(encoded1);
+      expect(decoded.kind, equals(Kind.MAP));
+      expect(decoded.mapValue.entries.first.key, equals('a'));
     });
   });
 }

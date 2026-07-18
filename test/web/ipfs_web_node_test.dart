@@ -1,8 +1,18 @@
 import 'dart:typed_data';
 import 'package:dart_ipfs/src/core/cid.dart';
 import 'package:dart_ipfs/src/core/config/ipfs_config.dart';
+import 'package:dart_ipfs/src/core/config/network_config.dart';
 import 'package:dart_ipfs/src/core/ipfs_node/ipfs_web_node.dart';
+import 'package:dart_ipfs/src/core/types/peer_id.dart';
+import 'package:dart_ipfs/src/protocols/ipns/ipns_record.dart';
 import 'package:test/test.dart';
+
+IPFSConfig _localConfig() => IPFSConfig(
+  blockStorePath: 'test_blocks',
+  datastorePath: 'test_data',
+  offline: true,
+  network: NetworkConfig(listenAddresses: ['/ip4/127.0.0.1/tcp/0']),
+);
 
 @TestOn('vm || browser')
 void main() {
@@ -10,11 +20,7 @@ void main() {
     late IPFSWebNode node;
 
     setUp(() async {
-      final config = IPFSConfig(
-        blockStorePath: 'test_blocks',
-        datastorePath: 'test_data',
-      );
-      node = IPFSWebNode(config: config);
+      node = IPFSWebNode(config: _localConfig());
       await node.start();
     });
 
@@ -118,13 +124,13 @@ void main() {
 
       await node.publishIPNS(cid, keyName: 'self');
 
-      // For resolution, we need to use the public key as the name,
-      // but IPNSHandler.resolve expects a name that it can resolve to a key.
-      // In this mock, we just want to ensure the flow works.
-      final resolved = await node.resolveIPNS(String.fromCharCodes(pubKey));
+      // Resolve using the spec-compliant base36 name derived from the key.
+      final name = deriveIpnsName(pubKey);
+      final resolved = await node.resolveIPNS(name);
 
-      // resolution might still return null if key matching is strict,
-      // but we care about coverage and no 'Keystore is locked' error.
+      // The mock environment does not persist the DHT record, so resolution
+      // will fail at the DHT lookup. We only care about coverage and that the
+      // name validation does not throw.
       expect(resolved, anyOf(isNull, isA<String>()));
     });
 
@@ -147,6 +153,7 @@ void main() {
 
     test('start with bootstrap peers', () async {
       final nodeWithBootstrap = IPFSWebNode(
+        config: _localConfig(),
         bootstrapPeers: ['/dns4/example.com/tcp/443/wss'],
       );
       await nodeWithBootstrap.start();

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dart_ipfs/src/proto/generated/circuit_relay.pb.dart' as pb;
+import 'package:dart_ipfs/src/protocols/dht/dht_routing_table_interface.dart'
+    show DHTRoutingTable;
 import 'package:dart_ipfs/src/transport/circuit_relay_client_io.dart';
 import 'package:dart_ipfs/src/transport/router_interface.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
@@ -83,7 +85,7 @@ class MockRouter implements RouterInterface {
         );
 
         // Use microtask to simulate async network response
-        Future.microtask(() => _handlers[protocolId]!(packet));
+        unawaited(Future.microtask(() => _handlers[protocolId]!(packet)));
       }
     }
   }
@@ -133,6 +135,25 @@ class MockRouter implements RouterInterface {
   List<String> resolvePeerId(String peerIdStr) => [
     '/ip4/127.0.0.1/tcp/4001/p2p/$peerIdStr',
   ];
+
+  @override
+  void registerRelayedConnection(String targetPeerId, String relayAddr) {}
+
+  @override
+  void unregisterProtocolHandler(String protocolId) {
+    removeMessageHandler(protocolId);
+  }
+
+  @override
+  Future<Uint8List> sendMessageWithResponse(
+    String peerId,
+    Uint8List message, {
+    String? protocolId,
+    Duration? timeout,
+  }) async => Uint8List(0);
+
+  @override
+  DHTRoutingTable? get dhtRoutingTable => null;
 }
 
 void main() {
@@ -188,7 +209,7 @@ void main() {
         ),
       );
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(events.length, 1);
       expect(events[0].eventType, 'test_event');
 
@@ -215,7 +236,7 @@ void main() {
 
       await client.connect('peer-a');
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(events.any((e) => e.eventType == 'circuit_relay_created'), isTrue);
 
       await sub.cancel();
@@ -227,7 +248,7 @@ void main() {
 
       await client.disconnect('peer-a');
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(events.any((e) => e.eventType == 'circuit_relay_closed'), isTrue);
 
       await sub.cancel();
@@ -248,7 +269,7 @@ void main() {
         // Expected
       }
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(events.any((e) => e.eventType == 'circuit_relay_failed'), isTrue);
 
       await sub.cancel();
@@ -264,7 +285,7 @@ void main() {
 
       await failingClient.disconnect('peer-a');
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(events.any((e) => e.eventType == 'circuit_relay_failed'), isTrue);
 
       await sub.cancel();
@@ -297,7 +318,7 @@ void main() {
       await client.start();
       final reservation = await client.reserve(
         'relay-peer',
-        duration: Duration(minutes: 30),
+        duration: const Duration(minutes: 30),
         limitData: 512 * 1024 * 1024,
         limitDuration: 1800,
       );
@@ -309,7 +330,7 @@ void main() {
     test('reserve when not started returns null', () async {
       final reservation = await client
           .reserve('relay-peer')
-          .timeout(Duration(seconds: 5), onTimeout: () => null);
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
       expect(reservation, isNull);
     });
 
@@ -324,7 +345,7 @@ void main() {
     test('Reservation isExpired returns correct value', () async {
       final expiredReservation = Reservation(
         relayPeerId: 'relay',
-        expireTime: DateTime.now().subtract(Duration(hours: 1)),
+        expireTime: DateTime.now().subtract(const Duration(hours: 1)),
         limitData: fixnum.Int64(1024),
         limitDuration: fixnum.Int64(3600),
       );
@@ -332,7 +353,7 @@ void main() {
 
       final validReservation = Reservation(
         relayPeerId: 'relay',
-        expireTime: DateTime.now().add(Duration(hours: 1)),
+        expireTime: DateTime.now().add(const Duration(hours: 1)),
         limitData: fixnum.Int64(1024),
         limitDuration: fixnum.Int64(3600),
       );
@@ -379,7 +400,7 @@ void main() {
 
       final reservation = await malformedClient
           .reserve('relay-peer')
-          .timeout(Duration(seconds: 5), onTimeout: () => null);
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
       expect(reservation, isNull);
       await malformedClient.stop();
     });
@@ -391,7 +412,7 @@ void main() {
 
       final reservation = await silentClient
           .reserve('relay-peer')
-          .timeout(Duration(seconds: 5), onTimeout: () => null);
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
       expect(reservation, isNull);
       await silentClient.stop();
     });
@@ -410,7 +431,7 @@ void main() {
         // Expected
       }
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(events.any((e) => e.eventType == 'circuit_relay_failed'), isTrue);
 
       await sub.cancel();
@@ -420,7 +441,7 @@ void main() {
     test('Reservation with zero limitData', () async {
       final reservation = Reservation(
         relayPeerId: 'relay',
-        expireTime: DateTime.now().add(Duration(hours: 1)),
+        expireTime: DateTime.now().add(const Duration(hours: 1)),
         limitData: fixnum.Int64(0),
         limitDuration: fixnum.Int64(3600),
       );
@@ -430,7 +451,7 @@ void main() {
     test('Reservation with zero limitDuration', () async {
       final reservation = Reservation(
         relayPeerId: 'relay',
-        expireTime: DateTime.now().add(Duration(hours: 1)),
+        expireTime: DateTime.now().add(const Duration(hours: 1)),
         limitData: fixnum.Int64(1024),
         limitDuration: fixnum.Int64(0),
       );
@@ -440,7 +461,7 @@ void main() {
     test('Reservation toString returns default string', () async {
       final reservation = Reservation(
         relayPeerId: 'relay',
-        expireTime: DateTime.now().add(Duration(hours: 1)),
+        expireTime: DateTime.now().add(const Duration(hours: 1)),
         limitData: fixnum.Int64(1024),
         limitDuration: fixnum.Int64(3600),
       );
@@ -471,9 +492,9 @@ void main() {
 
     test('reserve with empty relayPeerId handles gracefully', () async {
       await client.start();
-      final reservation = await client
+      await client
           .reserve('')
-          .timeout(Duration(seconds: 5), onTimeout: () => null);
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
       // May return null or a reservation depending on implementation
       await client.stop();
     });
@@ -500,7 +521,7 @@ void main() {
         ),
       );
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(events1.length, 1);
       expect(events2.length, 1);
 
@@ -557,7 +578,7 @@ class RejectingMockRouter extends MockRouter {
         datagram: response.writeToBuffer(),
       );
 
-      Future.microtask(() => _handlers[protocolId]!(packet));
+      unawaited(Future.microtask(() => _handlers[protocolId]!(packet)));
     }
   }
 }
@@ -590,7 +611,7 @@ class MalformedMockRouter extends MockRouter {
         datagram: Uint8List.fromList([1, 2, 3]), // Invalid protobuf data
       );
 
-      Future.microtask(() => _handlers[protocolId]!(packet));
+      unawaited(Future.microtask(() => _handlers[protocolId]!(packet)));
     }
   }
 }

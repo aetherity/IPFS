@@ -1,6 +1,6 @@
 // src/utils/password_prompt.dart
 import 'dart:async';
-import 'package:dart_ipfs/src/platform/platform.dart';
+import '../platform/platform.dart';
 
 /// Utility for securely prompting passwords from the terminal.
 ///
@@ -35,11 +35,26 @@ class PasswordPrompt {
     return password;
   }
 
-  /// Checks password strength (basic check).
+  /// Checks password strength.
   ///
-  /// Returns true if password meets minimum requirements.
+  /// Requires at least 12 characters, one uppercase, one lowercase,
+  /// one digit, one special character, and no common patterns.
   static bool isStrongEnough(String password) {
-    // Minimum 8 characters
-    return password.length >= 8;
+    if (password.length < 12) return false;
+    if (!password.contains(RegExp(r'[A-Z]'))) return false;
+    if (!password.contains(RegExp(r'[a-z]'))) return false;
+    if (!password.contains(RegExp(r'[0-9]'))) return false;
+    if (!password.contains(
+      RegExp(r'''[!@#$%^&*()_+\-=\[\]{};:'\",.<>?/\\|`~]'''),
+    )) {
+      return false;
+    }
+
+    const commonPatterns = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+    if (commonPatterns.any((p) => password.toLowerCase().contains(p))) {
+      return false;
+    }
+
+    return true;
   }
 }

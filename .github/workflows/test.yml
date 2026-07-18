@@ -16,7 +16,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dart-lang/setup-dart@v1
         with:
@@ -34,4 +34,4 @@ jobs:
         run: dart analyze lib test
 
       - name: Run tests
-        run: dart test
+        run: dart test --reporter=expanded

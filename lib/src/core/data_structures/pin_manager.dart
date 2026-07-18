@@ -4,14 +4,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cbor/cbor.dart';
-import 'package:dart_ipfs/src/core/cid.dart';
-import 'package:dart_ipfs/src/core/data_structures/blockstore.dart';
-import 'package:dart_ipfs/src/core/data_structures/merkle_dag_node.dart';
-import 'package:dart_ipfs/src/platform/platform.dart';
-import 'package:dart_ipfs/src/proto/generated/core/cid.pb.dart';
-import 'package:dart_ipfs/src/proto/generated/core/pin.pb.dart';
-import 'package:dart_ipfs/src/utils/logger.dart';
 import 'package:path/path.dart' as p;
+
+import '../../platform/platform.dart';
+import '../../proto/generated/core/cid.pb.dart';
+import '../../proto/generated/core/pin.pb.dart';
+import '../../utils/logger.dart';
+import '../cid.dart';
+import 'blockstore.dart';
+import 'merkle_dag_node.dart';
 
 /// Manages pinning operations to prevent content from garbage collection.
 class PinManager {
@@ -21,6 +22,9 @@ class PinManager {
   final Map<String, Set<String>> _references = {};
   final BlockStore _blockStore;
   final Logger _logger;
+
+  /// Returns the underlying block store.
+  BlockStore get blockStore => _blockStore;
 
   /// Loads the pin state from a file.
   Future<void> load(String path) async {
@@ -250,6 +254,34 @@ class PinManager {
     }
 
     return pinnedBlocks;
+  }
+
+  /// Returns the CID strings of all recursive pins.
+  List<String> getRecursivePins() {
+    return _pins.entries
+        .where((entry) => entry.value == PinTypeProto.PIN_TYPE_RECURSIVE)
+        .map((entry) => entry.key)
+        .toList();
+  }
+
+  /// Returns the CID strings of top-level recursive pins.
+  ///
+  /// A top-level recursive pin is a recursive pin that is not referenced by
+  /// any other recursive pin.
+  List<String> getRecursivePinRoots() {
+    final recursivePins = getRecursivePins().toSet();
+    if (recursivePins.isEmpty) return [];
+
+    final referencedByRecursive = <String>{};
+    for (final entry in _references.entries) {
+      if (recursivePins.contains(entry.key)) {
+        referencedByRecursive.addAll(entry.value);
+      }
+    }
+
+    return recursivePins
+        .where((cid) => !referencedByRecursive.contains(cid))
+        .toList();
   }
 
   IPFSCIDProto _stringToIPFSCIDProto(String cidStr) {

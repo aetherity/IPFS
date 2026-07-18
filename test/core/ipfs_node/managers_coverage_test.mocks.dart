@@ -293,6 +293,22 @@ class MockBitswapHandler extends _i1.Mock implements _i13.BitswapHandler {
           as _i10.Future<_i11.Block?>);
 
   @override
+  _i10.Future<_i11.Block?> getBlock(
+    String? cidStr, {
+    bool? useHttpFallback = true,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #getBlock,
+              [cidStr],
+              {#useHttpFallback: useHttpFallback},
+            ),
+            returnValue: _i10.Future<_i11.Block?>.value(),
+            returnValueForMissingStub: _i10.Future<_i11.Block?>.value(),
+          )
+          as _i10.Future<_i11.Block?>);
+
+  @override
   _i10.Future<Map<String, dynamic>> getStatus() =>
       (super.noSuchMethod(
             Invocation.method(#getStatus, []),
@@ -455,6 +471,19 @@ class MockDHTHandler extends _i1.Mock implements _i14.DHTHandler {
           as bool);
 
   @override
+  bool isValidProviderRecord(
+    _i18.PeerId? provider,
+    String? cid,
+    DateTime? ttl,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#isValidProviderRecord, [provider, cid, ttl]),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
   String? extractCIDFromResponse(String? responseBody) =>
       (super.noSuchMethod(
             Invocation.method(#extractCIDFromResponse, [responseBody]),
@@ -485,6 +514,15 @@ class MockDHTHandler extends _i1.Mock implements _i14.DHTHandler {
           as _i10.Future<void>);
 
   @override
+  _i10.Future<void> provideAll(List<_i16.CID>? cids) =>
+      (super.noSuchMethod(
+            Invocation.method(#provideAll, [cids]),
+            returnValue: _i10.Future<void>.value(),
+            returnValueForMissingStub: _i10.Future<void>.value(),
+          )
+          as _i10.Future<void>);
+
+  @override
   _i10.Future<void> handleRoutingTableUpdate(_i15.V_PeerInfo? peer) =>
       (super.noSuchMethod(
             Invocation.method(#handleRoutingTableUpdate, [peer]),
@@ -504,6 +542,15 @@ class MockDHTHandler extends _i1.Mock implements _i14.DHTHandler {
             returnValueForMissingStub: _i10.Future<void>.value(),
           )
           as _i10.Future<void>);
+
+  @override
+  List<_i18.PeerId> getLocalProvidersForCid(String? cidStr) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLocalProvidersForCid, [cidStr]),
+            returnValue: <_i18.PeerId>[],
+            returnValueForMissingStub: <_i18.PeerId>[],
+          )
+          as List<_i18.PeerId>);
 
   @override
   _i10.Future<String?> resolveDNSLink(String? domainName) =>
