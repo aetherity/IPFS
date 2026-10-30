@@ -78,7 +78,7 @@ dependencies:
   # implementation (lib/src/vendor/port_forwarder). Declared directly so
   # consumers resolve the patched 7.x line instead of the 6.x line that the
   # upstream port_forwarder package pins.
-  xml: ^7.1.0
+  xml: ^7.0.1
 
 dev_dependencies:
   test: ^1.33.0 # For unit and integration tests
